@@ -1495,33 +1495,62 @@ document.getElementById('forgotLink').addEventListener('click', async () => {
 // ---------- Auth state ----------
 onAuthStateChanged(auth, async (user) => {
   cleanupSubscriptions();
+
   if(user){
-    currentUser = user;
-    let snap = await getDoc(doc(db, 'users', user.uid));
-    if(!snap.exists()){
-      // Account exists in Auth but its profile doc never got written.
-      await setDoc(doc(db, 'users', user.uid), { email: user.email, displayName: '', username: '', createdAt: Date.now() });
-      snap = await getDoc(doc(db, 'users', user.uid));
-    }
-    myProfile = snap.data();
-    profileCache.set(user.uid, myProfile);
+    try{
+      currentUser = user;
 
-    if(!myProfile.username){
-      authScreen.style.display = 'none';
+      let snap = await getDoc(doc(db, 'users', user.uid));
+
+      if(!snap.exists()){
+        // Account exists in Auth but its profile doc never got written.
+        await setDoc(doc(db, 'users', user.uid), {
+          email: user.email,
+          displayName: '',
+          username: '',
+          createdAt: Date.now()
+        });
+
+        snap = await getDoc(doc(db, 'users', user.uid));
+      }
+
+      myProfile = snap.data();
+      profileCache.set(user.uid, myProfile);
+
+      if(!myProfile.username){
+        authScreen.style.display = 'none';
+        appEl.classList.remove('visible');
+        completeProfileScreen.style.display = 'flex';
+        completeDisplayName.value = myProfile.displayName || '';
+        return;
+      }
+
+      completeProfileScreen.style.display = 'none';
+      enterApp();
+
+    } catch(err){
+      console.error('WIRE auth/profile error:', err);
+
+      currentUser = null;
+      myProfile = null;
+
       appEl.classList.remove('visible');
-      completeProfileScreen.style.display = 'flex';
-      completeDisplayName.value = myProfile.displayName || '';
-      return;
+      completeProfileScreen.style.display = 'none';
+      authScreen.style.display = 'flex';
+
+      showAuthError(
+        'Login succeeded, but WIRE could not load your profile. Check your Firestore permissions.'
+      );
     }
 
-    completeProfileScreen.style.display = 'none';
-    enterApp();
   } else {
     currentUser = null;
     myProfile = null;
+
     appEl.classList.remove('visible');
     completeProfileScreen.style.display = 'none';
     authScreen.style.display = 'flex';
+
     authForm.reset();
     listsEl.innerHTML = '';
     mainPanel.innerHTML = `<div class="empty-state"><div class="glyph">✦</div><p>SELECT A LINE TO BEGIN</p></div>`;
