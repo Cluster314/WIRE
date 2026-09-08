@@ -17,8 +17,8 @@
     --bg-elevated:#383a40;
     --paper:#dbdee1;
     --paper-2:#949ba4;
-    --brass:#40BFFF;
-    --brass-dim:#2E96CC;
+    --brass:#04BFFF;
+    --brass-dim:#0398CC;
     --rust:#da373c;
     --green:#23a55a;
     --line: rgba(255,255,255,0.06);
@@ -1090,12 +1090,295 @@
     .msg-continuation{ padding-left: 100px; padding-right: 130px; }
   }
 
+  /* ---------- Mobile layout ---------- */
   @media (max-width: 760px){
-    .app{ grid-template-columns: 1fr; max-width:none; }
-    .sidebar{ position: fixed; inset: 0; z-index: 5; transition: transform .25s ease; width:100%; }
-    .app.chat-open .sidebar{ transform: translateX(-100%); }
-    .back-btn{ display:inline-block; }
+    html, body{
+      width:100%;
+      min-width:0;
+      height:100%;
+      overflow:hidden;
+    }
+
+    .app{
+      display:none;
+      grid-template-columns: minmax(0, 1fr);
+      width:100%;
+      min-width:0;
+      max-width:none;
+      height:100vh;
+      height:100dvh;
+      margin:0;
+      overflow:hidden;
+    }
+    .app.visible{ display:grid; }
+
+    /* The contact list is the mobile home screen. */
+    .sidebar{
+      position:fixed;
+      top:0;
+      right:0;
+      bottom:0;
+      left:0;
+      width:100%;
+      height:100vh;
+      height:100dvh;
+      min-width:0;
+      z-index:5;
+      transform:translateX(0);
+      transition:transform .25s ease;
+      overflow:hidden;
+      border-right:none;
+    }
+    .app.chat-open .sidebar{ transform:translateX(-100%); }
+
+    .sidebar-head{
+      padding:calc(14px + env(safe-area-inset-top)) 14px 10px;
+    }
+    .brand{ font-size:15px; }
+    .search-wrap{ padding:10px 12px 4px; }
+    .search-wrap input{
+      min-height:42px;
+      font-size:16px;
+    }
+    .new-group-btn{
+      min-height:42px;
+      font-size:13px;
+    }
+    .section-label{ padding-left:12px; padding-right:12px; }
+    .contact{
+      min-height:58px;
+      padding:9px 12px;
+      margin:1px 6px;
+    }
+    .contact-name{ font-size:15px; }
+    .contact-preview{ font-size:12.5px; }
+
+    /* Chat pane fills the entire phone. */
+    .main{
+      width:100%;
+      min-width:0;
+      height:100%;
+      min-height:0;
+      overflow:hidden;
+    }
+    .chat-head{
+      min-height:58px;
+      padding:calc(8px + env(safe-area-inset-top)) 10px 8px;
+      gap:8px;
+      flex-shrink:0;
+    }
+    .back-btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:40px;
+      height:40px;
+      padding:0;
+      flex-shrink:0;
+      font-size:22px;
+    }
+    .chat-head .avatar{ width:34px; height:34px; }
+    .chat-head-info{ min-width:0; }
+    .chat-head-info .name{
+      font-size:15px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .chat-head-info .status{
+      font-size:11px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .remove-friend-btn{
+      min-height:36px;
+      padding:6px 8px;
+      font-size:9px;
+      flex-shrink:0;
+    }
+
+    .messages{
+      padding:10px 0 14px;
+      overscroll-behavior:contain;
+      -webkit-overflow-scrolling:touch;
+    }
+    .day-divider{
+      margin:18px 10px 10px;
+      gap:8px;
+      font-size:10px;
+    }
+    .msg-group{
+      gap:9px;
+      padding:3px 10px;
+      margin-top:13px;
+    }
+    .msg-group .avatar{
+      width:34px;
+      height:34px;
+      font-size:13px;
+    }
+    .msg-group .avatar-wrap{ margin-top:1px; }
+    .msg-author{ font-size:14px; }
+    .msg-time{ font-size:9px; }
+    .msg-text{
+      font-size:14px;
+      line-height:1.45;
+      overflow-wrap:anywhere;
+      word-break:break-word;
+    }
+    .msg-continuation{
+      padding:0 10px;
+    }
+    .msg-continuation .cont-time{
+      width:34px;
+      font-size:9px;
+    }
+
+    /* Message action buttons need to be usable without a mouse. */
+    .msg-actions{
+      right:8px;
+      top:-10px;
+      max-width:calc(100vw - 20px);
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    .msg-action-btn{
+      min-height:34px;
+      padding:7px 9px;
+      font-size:9px;
+    }
+
+    .composer{
+      padding:0 8px calc(8px + env(safe-area-inset-bottom));
+      flex-shrink:0;
+    }
+    .composer-bar{
+      gap:7px;
+      padding:9px 10px;
+      border-radius:8px;
+    }
+    .composer textarea{
+      min-width:0;
+      font-size:16px;
+      line-height:1.35;
+      max-height:110px;
+    }
+    .send-btn{
+      min-width:58px;
+      min-height:38px;
+      padding:8px 10px;
+      font-size:10px;
+      flex-shrink:0;
+    }
+    .composer-mode-banner{
+      max-width:100%;
+    }
+    .composer-preview{
+      max-width:100%;
+    }
+
+    /* Keep dialogs inside narrow phone screens and allow tall dialogs to scroll. */
+    .modal-overlay{
+      align-items:flex-start;
+      overflow-y:auto;
+      padding:calc(12px + env(safe-area-inset-top)) 10px calc(12px + env(safe-area-inset-bottom));
+    }
+    .modal-card{
+      width:100%;
+      max-width:420px;
+      max-height:calc(100dvh - 24px);
+      overflow-y:auto;
+      padding:26px 18px 20px;
+      margin:auto;
+    }
+    .picker-list{ max-height:34dvh; }
+
+    /* Don't let long usernames, URLs, or code push the phone layout sideways. */
+    .modal-name,
+    .modal-username,
+    .picker-name,
+    .picker-uname,
+    .member-name,
+    .member-uname{
+      overflow-wrap:anywhere;
+      word-break:break-word;
+    }
   }
+
+  @media (max-width: 380px){
+    .sidebar-head{ padding-left:10px; padding-right:10px; }
+    .search-wrap{ padding-left:8px; padding-right:8px; }
+    .contact{ gap:9px; }
+    .contact-name .uname{ display:none; }
+    .remove-friend-btn{ font-size:8px; padding-left:6px; padding-right:6px; }
+    .msg-group{ gap:7px; padding-left:7px; padding-right:7px; }
+    .msg-continuation{ padding-left:7px; padding-right:7px; }
+    .msg-text{ font-size:13.5px; }
+    .composer{ padding-left:6px; padding-right:6px; }
+  }
+
+
+  /* ---------- Mobile contacts page + profile/theme settings ---------- */
+  .mobile-contacts-page{ display:none; }
+  .profile-settings-title{ font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--paper); margin-bottom:2px; }
+  .profile-settings-sub{ font-family:var(--font-display); font-size:10px; letter-spacing:1px; color:var(--paper-2); text-transform:uppercase; margin-bottom:12px; }
+  .theme-presets{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .theme-preset{ appearance:none; border:1px solid var(--line); background:var(--ink); color:var(--paper); border-radius:8px; padding:10px; cursor:pointer; text-align:left; transition:border-color .15s,transform .15s; }
+  .theme-preset:hover{ border-color:var(--brass); transform:translateY(-1px); }
+  .theme-preset.active{ border-color:var(--brass); box-shadow:0 0 0 1px var(--brass) inset; }
+  .theme-preview{ display:flex; gap:5px; margin-bottom:7px; }
+  .theme-swatch{ width:24px; height:16px; border-radius:4px; border:1px solid rgba(255,255,255,.12); }
+  .theme-preset-name{ font-size:12px; font-weight:700; }
+  .theme-preset-desc{ font-size:10px; color:var(--paper-2); margin-top:2px; }
+  .color-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .color-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--ink); border:1px solid var(--line); border-radius:7px; padding:8px 9px; }
+  .color-row span{ font-size:11px; color:var(--paper); min-width:0; }
+  .color-row small{ display:block; color:var(--paper-2); font-size:9px; margin-top:2px; }
+  .color-row input[type=color]{ width:36px; height:30px; padding:2px; border:1px solid var(--line); border-radius:6px; background:var(--ink-2); cursor:pointer; flex-shrink:0; }
+  .theme-reset-row{ display:flex; gap:8px; margin-top:9px; }
+  .theme-reset-row .modal-btn{ flex:1; }
+  .modal-card{ width:520px; max-width:min(520px,calc(100vw - 40px)); max-height:min(720px,calc(100vh - 40px)); overflow-y:auto; overscroll-behavior:contain; }
+  @media (max-width:760px){
+    .sidebar{ display:none !important; }
+    .mobile-contacts-page{ display:flex; flex-direction:column; position:fixed; inset:0; z-index:10; width:100%; height:100dvh; min-width:0; background:var(--ink); overflow:hidden; }
+    .app.chat-open .mobile-contacts-page{ display:none; }
+    .mobile-contacts-head{ flex-shrink:0; padding:calc(12px + env(safe-area-inset-top)) 14px 10px; border-bottom:1px solid var(--line); background:var(--ink); }
+    .mobile-brand-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .mobile-brand-row .brand-left{ font-family:var(--font-display); font-size:16px; font-weight:700; color:var(--paper); }
+    .mobile-head-actions{ display:flex; align-items:center; gap:6px; }
+    .mobile-profile-btn{ background:none; border:1px solid var(--line); color:var(--paper-2); border-radius:5px; padding:7px 8px; font-family:var(--font-display); font-size:9px; letter-spacing:.7px; cursor:pointer; }
+    .mobile-profile-btn:active{ border-color:var(--brass); color:var(--brass); }
+    .mobile-account-row{ width:100%; margin-top:10px; padding:0; background:none; border:0; display:flex; align-items:center; gap:10px; color:var(--paper); text-align:left; cursor:pointer; }
+    .mobile-own-avatar{ width:42px; height:42px; flex-shrink:0; }
+    .mobile-account-copy{ min-width:0; flex:1; font-family:var(--font-display); }
+    .mobile-account-copy > div{ font-size:14px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .mobile-account-copy span{ display:block; margin-top:2px; font-size:10px; color:var(--paper-2); letter-spacing:.3px; }
+    .mobile-account-arrow{ font-size:25px; line-height:1; color:var(--paper-2); }
+    .mobile-search-wrap{ padding:10px 12px 6px; position:relative; flex-shrink:0; }
+    .mobile-search-wrap input{ width:100%; min-height:44px; padding:10px 12px; background:var(--ink-3); border:1px solid var(--line); color:var(--paper); font:16px var(--font-body); border-radius:7px; outline:none; }
+    .mobile-search-wrap input:focus{ border-color:var(--brass); }
+    .mobile-search-wrap input::placeholder{ color:var(--paper-2); opacity:.7; }
+    .mobile-search-results{ position:absolute; left:12px; right:12px; top:58px; z-index:20; background:var(--ink-2); }
+    .mobile-search-wrap .new-group-btn{ width:100%; min-height:42px; margin-top:7px; }
+    .mobile-lists{ flex:1; min-height:0; overflow-y:auto; padding:0 0 calc(14px + env(safe-area-inset-bottom)); -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
+    .mobile-lists .section-label{ padding:12px 14px 5px; }
+    .mobile-lists .contact{ min-height:64px; margin:1px 6px; padding:10px 9px; border-radius:8px; }
+    .mobile-lists .contact:active{ background:var(--ink-3); }
+    .mobile-lists .request-row{ margin:1px 6px; padding:10px 9px; }
+    .modal-overlay{ align-items:center; padding:14px; overflow:hidden; }
+    .modal-card{ width:min(520px,100%); max-width:100%; max-height:min(78dvh,680px); padding:24px 18px 18px; margin:0; border-radius:14px; }
+    .modal-card .color-grid{ grid-template-columns:1fr; }
+    .modal-card .theme-presets{ grid-template-columns:1fr 1fr; }
+  }
+  @media (max-width:380px){
+    .mobile-contacts-head{ padding-left:10px; padding-right:10px; }
+    .mobile-search-wrap{ padding-left:8px; padding-right:8px; }
+    .mobile-search-results{ left:8px; right:8px; }
+    .mobile-head-actions .logout-btn{ display:none; }
+    .mobile-profile-btn{ font-size:8px; padding:6px 7px; }
+  }
+
 </style>
 </head>
 <body>
@@ -1195,6 +1478,32 @@
     <div class="lists" id="lists"></div>
   </aside>
 
+  <section class="mobile-contacts-page" id="mobileContactsPage" aria-label="Contacts">
+    <div class="mobile-contacts-head">
+      <div class="mobile-brand-row">
+        <div class="brand-left"><span class="dot"></span> WIRE</div>
+        <div class="mobile-head-actions">
+          <button class="mobile-profile-btn" id="mobileProfileBtn" aria-label="Open profile and appearance">PROFILE</button>
+          <button class="logout-btn" id="mobileLogoutBtn">LOG OUT</button>
+        </div>
+      </div>
+      <button class="mobile-account-row" id="mobileAccountBtn">
+        <div class="own-avatar-wrap mobile-own-avatar" id="mobileOwnAvatarWrap"></div>
+        <div class="mobile-account-copy">
+          <div id="mobileUserLabel">@username</div>
+          <span>Profile &amp; Appearance</span>
+        </div>
+        <span class="mobile-account-arrow">›</span>
+      </button>
+    </div>
+    <div class="mobile-search-wrap">
+      <input type="text" id="mobileSearchInput" placeholder="Find people by @username…" autocomplete="off">
+      <div class="search-results mobile-search-results" id="mobileSearchResults"></div>
+      <button class="new-group-btn" id="mobileNewGroupBtn">+ New Group</button>
+    </div>
+    <div class="mobile-lists" id="mobileLists"></div>
+  </section>
+
   <main class="main" id="mainPanel">
     <div class="empty-state">
       <div class="glyph">✦</div>
@@ -1255,6 +1564,11 @@ const mainPanel = document.getElementById('mainPanel');
 const userLabel = document.getElementById('userLabel');
 const logoutBtn = document.getElementById('logoutBtn');
 const toastStack = document.getElementById('toastStack');
+const mobileListsEl = document.getElementById('mobileLists');
+const mobileSearchInput = document.getElementById('mobileSearchInput');
+const mobileSearchResultsEl = document.getElementById('mobileSearchResults');
+const mobileUserLabel = document.getElementById('mobileUserLabel');
+const mobileOwnAvatarWrap = document.getElementById('mobileOwnAvatarWrap');
 
 let mode = 'login';
 let currentUser = null;
@@ -1555,6 +1869,7 @@ onAuthStateChanged(auth, async (user) => {
 
     authForm.reset();
     listsEl.innerHTML = '';
+    if(mobileListsEl) mobileListsEl.innerHTML = '';
     mainPanel.innerHTML = `<div class="empty-state"><div class="glyph">✦</div><p>SELECT A LINE TO BEGIN</p></div>`;
   }
 });
@@ -1587,17 +1902,23 @@ function enterApp(){
 }
 
 function renderOwnAvatar(){
-  const wrap = document.getElementById('ownAvatarWrap');
-  if(!wrap) return;
   const status = ownEffectiveStatus();
   const meta = STATUS_META[status];
   const dotClass = 'status-dot' + (status === 'invisible' ? ' status-dot-invisible' : '');
-  wrap.innerHTML = `${avatarHtml(myProfile)}<span class="${dotClass}" style="background:${meta.color}" title="${meta.label}"></span>`;
+  const html = `${avatarHtml(myProfile)}<span class="${dotClass}" style="background:${meta.color}" title="${meta.label}"></span>`;
+  const wrap = document.getElementById('ownAvatarWrap');
+  if(wrap) wrap.innerHTML = html;
+  if(mobileOwnAvatarWrap) mobileOwnAvatarWrap.innerHTML = html;
+  if(mobileUserLabel) mobileUserLabel.textContent = myProfile.username ? '@' + myProfile.username : (myProfile.email || 'WIRE');
 }
 
 document.getElementById('ownAvatarWrap').addEventListener('click', () => {
   openProfileModal(currentUser.uid, myProfile);
 });
+function openOwnProfileSettings(){ if(currentUser && myProfile) openProfileModal(currentUser.uid, myProfile); }
+if(document.getElementById('mobileProfileBtn')) document.getElementById('mobileProfileBtn').addEventListener('click', openOwnProfileSettings);
+if(document.getElementById('mobileAccountBtn')) document.getElementById('mobileAccountBtn').addEventListener('click', openOwnProfileSettings);
+if(document.getElementById('mobileLogoutBtn')) document.getElementById('mobileLogoutBtn').addEventListener('click', () => document.getElementById('logoutBtn').click());
 
 function compressImageToDataURL(file, maxDim, quality){
   maxDim = maxDim || 160;
@@ -1668,6 +1989,27 @@ profileModalOverlay.addEventListener('click', (e) => {
   if(e.target === profileModalOverlay) closeProfileModal();
 });
 
+const THEME_KEYS = ['ink','ink-2','ink-3','bg-main','bg-elevated','paper','paper-2','brass','brass-dim','rust','green','line'];
+const THEME_LABELS = {'ink':'App background','ink-2':'Panels / cards','ink-3':'Inputs / deep','bg-main':'Chat background','bg-elevated':'Elevated surfaces','paper':'Main text','paper-2':'Secondary text','brass':'Accent','brass-dim':'Accent dim','rust':'Danger','green':'Success','line':'Borders'};
+const THEME_PRESETS = {
+  dark:{ink:'#2b2d31','ink-2':'#383a40','ink-3':'#1e1f22','bg-main':'#313338','bg-elevated':'#383a40',paper:'#dbdee1','paper-2':'#949ba4',brass:'#04BFFF','brass-dim':'#0398CC',rust:'#da373c',green:'#23a55a',line:'#45484e'},
+  light:{ink:'#f5f7fa','ink-2':'#ffffff','ink-3':'#e8edf2','bg-main':'#eef3f7','bg-elevated':'#ffffff',paper:'#17202a','paper-2':'#5c6b78',brass:'#04BFFF','brass-dim':'#0398CC',rust:'#d62f3a',green:'#16884b',line:'#cbd5df'}
+};
+function themePresetHtml(name){ const t=THEME_PRESETS[name]; return `<button type="button" class="theme-preset ${getCurrentThemeName()===name?'active':''}" data-theme="${name}"><div class="theme-preview"><span class="theme-swatch" style="background:${t.ink}"></span><span class="theme-swatch" style="background:${t['bg-main']}"></span><span class="theme-swatch" style="background:${t.brass}"></span></div><div class="theme-preset-name">${name==='dark'?'Dark':'Light'}</div><div class="theme-preset-desc">WIRE blue · #04BFFF</div></button>`; }
+function colorToHex(value){ if(!value) return null; if(/^#[0-9a-f]{6}$/i.test(value)) return value; const m=value.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i); return m ? '#'+[m[1],m[2],m[3]].map(n=>Number(n).toString(16).padStart(2,'0')).join('') : null; }
+function themeColorInputsHtml(){ return THEME_KEYS.map(key=>{ const value=getComputedStyle(document.documentElement).getPropertyValue('--'+key).trim(); const hex=colorToHex(value)||'#04BFFF'; return `<label class="color-row"><span>${THEME_LABELS[key]}<small>--${key}</small></span><input class="theme-color-input" type="color" value="${hex}" data-var="--${key}" aria-label="${THEME_LABELS[key]}"></label>`; }).join(''); }
+function applyTheme(name){
+  let theme;
+  if(name==='custom'){ try{ theme=JSON.parse(localStorage.getItem('wireCustomTheme')||'null'); }catch(e){ theme=null; } if(!theme) theme=THEME_PRESETS.dark; localStorage.setItem('wireTheme','custom'); }
+  else if(name==='custom-reset'){ theme=THEME_PRESETS.dark; localStorage.removeItem('wireCustomTheme'); localStorage.setItem('wireTheme','dark'); }
+  else { theme=THEME_PRESETS[name]||THEME_PRESETS.dark; localStorage.setItem('wireTheme',name); }
+  THEME_KEYS.forEach(key=>document.documentElement.style.setProperty('--'+key,theme[key]));
+  if(typeof renderOwnAvatar==='function' && myProfile) renderOwnAvatar();
+}
+function getCurrentThemeName(){ return localStorage.getItem('wireTheme')||'dark'; }
+function saveThemeToLocalStorage(mode){ const theme={}; THEME_KEYS.forEach(key=>theme[key]=getComputedStyle(document.documentElement).getPropertyValue('--'+key).trim()); localStorage.setItem('wireCustomTheme',JSON.stringify(theme)); localStorage.setItem('wireTheme',mode==='custom'?'custom':mode); }
+(function loadWireTheme(){ const saved=localStorage.getItem('wireTheme'); applyTheme(saved==='light'||saved==='dark'||saved==='custom'?saved:'dark'); })();
+
 function renderProfileModal(){
   const uid = profileModalUid;
   if(!uid) return;
@@ -1691,6 +2033,8 @@ function renderProfileModal(){
 
   if(isSelf){
     html += `
+      <div class="profile-settings-title">Profile &amp; Appearance</div>
+      <div class="profile-settings-sub">Everything in one place</div>
       <div class="modal-section">
         <div class="modal-section-label">BIO</div>
         <textarea class="modal-textarea" id="modalBioInput" maxlength="160" placeholder="Say something about yourself…">${escapeHtml(p.bio || '')}</textarea>
@@ -1705,6 +2049,13 @@ function renderProfileModal(){
       <div class="modal-section">
         <div class="modal-section-label">PROFILE PHOTO</div>
         <button class="modal-btn modal-btn-secondary" id="modalChangePhotoBtn">CHANGE PHOTO</button>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">THEME</div>
+        <div class="theme-presets">${themePresetHtml('dark')}${themePresetHtml('light')}</div>
+        <div class="modal-section-label" style="margin-top:14px;">CUSTOM COLORS</div>
+        <div class="color-grid" id="customColorGrid">${themeColorInputsHtml()}</div>
+        <div class="theme-reset-row"><button class="modal-btn" id="resetCustomThemeBtn">RESET CUSTOM COLORS</button><button class="modal-btn" id="saveCustomThemeBtn">SAVE CUSTOM THEME</button></div>
       </div>
       <div class="modal-section">
         <div class="modal-section-label">STATUS</div>
@@ -1754,11 +2105,18 @@ function renderProfileModal(){
       }
     });
     profileModalCard.querySelectorAll('.status-option').forEach(el => {
-      el.addEventListener('click', () => {
-        setPresenceMode(el.getAttribute('data-mode'));
-        renderProfileModal();
-      });
+      el.addEventListener('click', () => { setPresenceMode(el.getAttribute('data-mode')); renderProfileModal(); });
     });
+    profileModalCard.querySelectorAll('.theme-preset').forEach(el => {
+      el.addEventListener('click', () => { applyTheme(el.getAttribute('data-theme')); renderProfileModal(); });
+    });
+    profileModalCard.querySelectorAll('.theme-color-input').forEach(input => {
+      input.addEventListener('input', () => { document.documentElement.style.setProperty(input.getAttribute('data-var'), input.value); saveThemeToLocalStorage('custom'); });
+    });
+    const resetBtn=document.getElementById('resetCustomThemeBtn');
+    if(resetBtn) resetBtn.addEventListener('click', () => { applyTheme('custom-reset'); renderProfileModal(); });
+    const saveBtn=document.getElementById('saveCustomThemeBtn');
+    if(saveBtn) saveBtn.addEventListener('click', () => { saveThemeToLocalStorage('custom'); showToast('Theme saved','Your custom colors are saved on this device.'); });
   }
 }
 
@@ -1799,6 +2157,9 @@ document.getElementById('newGroupBtn').addEventListener('click', () => {
   selectedGroupMembers = new Set();
   renderNewGroupModal();
   newGroupModalOverlay.classList.add('visible');
+});
+if(document.getElementById('mobileNewGroupBtn')) document.getElementById('mobileNewGroupBtn').addEventListener('click', () => {
+  selectedGroupMembers = new Set(); renderNewGroupModal(); newGroupModalOverlay.classList.add('visible');
 });
 newGroupModalOverlay.addEventListener('click', (e) => {
   if(e.target === newGroupModalOverlay) newGroupModalOverlay.classList.remove('visible');
@@ -2264,7 +2625,7 @@ function wireCodeCopyButtons(container){
 function initialsFor(name){
   return (name || '?').slice(0, 2).toUpperCase();
 }
-const DEFAULT_AVATAR_SVG = `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="M4 24 L13 24 L16.5 17 L20 28 L23.5 12 L27 24 L36 24" fill="none" stroke="#40BFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="30" cy="9" r="2.4" fill="#40BFFF"/></svg>`;
+const DEFAULT_AVATAR_SVG = `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="M4 24 L13 24 L16.5 17 L20 28 L23.5 12 L27 24 L36 24" fill="none" stroke="#04BFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="30" cy="9" r="2.4" fill="#04BFFF"/></svg>`;
 function avatarHtml(profile, extraClass){
   extraClass = extraClass || '';
   if(profile && profile.photoURL){
@@ -2316,27 +2677,29 @@ searchInput.addEventListener('input', () => {
   searchDebounce = setTimeout(() => runSearch(term), 300);
 });
 
-async function runSearch(term){
+async function runSearch(term, inputEl, resultsEl){
+  inputEl = inputEl || searchInput;
+  resultsEl = resultsEl || searchResultsEl;
   const usersRef = collection(db, 'users');
   const q = query(usersRef, orderBy('username'), where('username', '>=', term), where('username', '<=', term + '\uf8ff'), limit(8));
   let snap;
   try{
     snap = await getDocs(q);
   } catch(err){
-    searchResultsEl.innerHTML = `<div class="search-result-row"><div class="sr-info"><div class="sr-name">Search unavailable right now.</div></div></div>`;
-    searchResultsEl.classList.add('visible');
+    resultsEl.innerHTML = `<div class="search-result-row"><div class="sr-info"><div class="sr-name">Search unavailable right now.</div></div></div>`;
+    resultsEl.classList.add('visible');
     return;
   }
   const results = [];
   snap.forEach(d => { if(d.id !== currentUser.uid) results.push({ uid: d.id, ...d.data() }); });
 
   if(results.length === 0){
-    searchResultsEl.innerHTML = `<div class="search-result-row"><div class="sr-info"><div class="sr-name">No one found with that username.</div></div></div>`;
-    searchResultsEl.classList.add('visible');
+    resultsEl.innerHTML = `<div class="search-result-row"><div class="sr-info"><div class="sr-name">No one found with that username.</div></div></div>`;
+    resultsEl.classList.add('visible');
     return;
   }
 
-  searchResultsEl.innerHTML = '';
+  resultsEl.innerHTML = '';
   for(const r of results){
     profileCache.set(r.uid, r);
     const status = friendshipStatusWith(r.uid);
@@ -2360,30 +2723,37 @@ async function runSearch(term){
       </div>
       ${actionHtml}
     `;
-    searchResultsEl.appendChild(row);
+    resultsEl.appendChild(row);
   }
-  searchResultsEl.classList.add('visible');
+  resultsEl.classList.add('visible');
 
-  searchResultsEl.querySelectorAll('.avatar-wrap[data-profile-uid]').forEach(el => {
+  resultsEl.querySelectorAll('.avatar-wrap[data-profile-uid]').forEach(el => {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       const uid = el.getAttribute('data-profile-uid');
       if(uid) openProfileModal(uid, profileCache.get(uid));
     });
   });
-  searchResultsEl.querySelectorAll('[data-add]').forEach(btn => {
+  resultsEl.querySelectorAll('[data-add]').forEach(btn => {
     btn.addEventListener('click', () => sendFriendRequest(btn.getAttribute('data-add')));
   });
-  searchResultsEl.querySelectorAll('[data-accept]').forEach(btn => {
+  resultsEl.querySelectorAll('[data-accept]').forEach(btn => {
     btn.addEventListener('click', () => respondToRequest(btn.getAttribute('data-accept'), true));
   });
 }
 
 document.addEventListener('click', (e) => {
-  if(!searchResultsEl.contains(e.target) && e.target !== searchInput){
-    searchResultsEl.classList.remove('visible');
-  }
+  if(!searchResultsEl.contains(e.target) && e.target !== searchInput) searchResultsEl.classList.remove('visible');
+  if(mobileSearchResultsEl && !mobileSearchResultsEl.contains(e.target) && e.target !== mobileSearchInput) mobileSearchResultsEl.classList.remove('visible');
 });
+if(mobileSearchInput){
+  mobileSearchInput.addEventListener('input', () => {
+    const term = mobileSearchInput.value.trim().toLowerCase();
+    if(!term){ mobileSearchResultsEl.classList.remove('visible'); mobileSearchResultsEl.innerHTML=''; return; }
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => runSearch(term, mobileSearchInput, mobileSearchResultsEl), 300);
+  });
+}
 
 // ---------- Friendships ----------
 let friendshipsData = []; // raw docs
@@ -2409,6 +2779,7 @@ async function sendFriendRequest(uid){
     updatedAt: Date.now()
   });
   searchInput.dispatchEvent(new Event('input'));
+  if(mobileSearchInput) mobileSearchInput.dispatchEvent(new Event('input'));
 }
 
 async function respondToRequest(uid, accept){
@@ -2688,35 +3059,32 @@ function renderLists(){
   }
 
   listsEl.innerHTML = html;
+  if(mobileListsEl) mobileListsEl.innerHTML = html;
 
-  listsEl.querySelectorAll('.avatar-wrap[data-profile-uid]').forEach(el => {
-    el.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const uid = el.getAttribute('data-profile-uid');
-      if(uid) openProfileModal(uid, profileCache.get(uid));
+  function wireListInteractions(container){
+    if(!container) return;
+    container.querySelectorAll('.avatar-wrap[data-profile-uid]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const uid = el.getAttribute('data-profile-uid');
+        if(uid) openProfileModal(uid, profileCache.get(uid));
+      });
     });
-  });
-
-  listsEl.querySelectorAll('[data-open]').forEach(el => {
-    el.addEventListener('click', () => {
-      const uid = el.getAttribute('data-open');
-      const p = profileCache.get(uid);
-      openChat(uid, p);
+    container.querySelectorAll('[data-open]').forEach(el => {
+      el.addEventListener('click', () => openChat(el.getAttribute('data-open'), profileCache.get(el.getAttribute('data-open'))));
     });
-  });
-  listsEl.querySelectorAll('[data-open-group]').forEach(el => {
-    el.addEventListener('click', () => {
-      const gid = el.getAttribute('data-open-group');
-      const g = groupsData.find(x => x.id === gid);
-      if(g) openGroupChat(gid, g);
+    container.querySelectorAll('[data-open-group]').forEach(el => {
+      el.addEventListener('click', () => {
+        const gid = el.getAttribute('data-open-group');
+        const g = groupsData.find(x => x.id === gid);
+        if(g) openGroupChat(gid, g);
+      });
     });
-  });
-  listsEl.querySelectorAll('[data-accept]').forEach(el => {
-    el.addEventListener('click', () => respondToRequest(el.getAttribute('data-accept'), true));
-  });
-  listsEl.querySelectorAll('[data-decline]').forEach(el => {
-    el.addEventListener('click', () => respondToRequest(el.getAttribute('data-decline'), false));
-  });
+    container.querySelectorAll('[data-accept]').forEach(el => el.addEventListener('click', () => respondToRequest(el.getAttribute('data-accept'), true)));
+    container.querySelectorAll('[data-decline]').forEach(el => el.addEventListener('click', () => respondToRequest(el.getAttribute('data-decline'), false)));
+  }
+  wireListInteractions(listsEl);
+  wireListInteractions(mobileListsEl);
 }
 
 // ---------- Chat ----------
@@ -3094,7 +3462,7 @@ function wireComposer(){
   }
 }
 
-const GROUP_AVATAR_SVG = `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="15" cy="15" r="7" fill="none" stroke="#40BFFF" stroke-width="2.4"/><circle cx="27" cy="20" r="7" fill="none" stroke="#40BFFF" stroke-width="2.4"/><path d="M6 34 C6 26 11 22 15 22 C19 22 22 25 22 25" fill="none" stroke="#40BFFF" stroke-width="2.4" stroke-linecap="round"/><path d="M18 34 C18 27 22 24 27 24 C32 24 36 28 36 34" fill="none" stroke="#40BFFF" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+const GROUP_AVATAR_SVG = `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="15" cy="15" r="7" fill="none" stroke="#04BFFF" stroke-width="2.4"/><circle cx="27" cy="20" r="7" fill="none" stroke="#04BFFF" stroke-width="2.4"/><path d="M6 34 C6 26 11 22 15 22 C19 22 22 25 22 25" fill="none" stroke="#04BFFF" stroke-width="2.4" stroke-linecap="round"/><path d="M18 34 C18 27 22 24 27 24 C32 24 36 28 36 34" fill="none" stroke="#04BFFF" stroke-width="2.4" stroke-linecap="round"/></svg>`;
 
 function groupAvatarHtml(group, extraClass){
   extraClass = extraClass || '';
