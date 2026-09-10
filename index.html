@@ -600,6 +600,43 @@
   .send-btn:hover{ background: var(--brass-dim); }
   .send-btn:disabled{ opacity:0.4; cursor:default; }
 
+.attach-btn{
+  width:38px;height:38px;flex-shrink:0;
+  border:1px solid var(--line);background:transparent;
+  color:var(--paper-2);border-radius:6px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;transition:0.15s ease;
+}
+.attach-btn:hover{border-color:var(--brass);color:var(--brass);background:rgba(4,191,255,0.06);}
+.attach-btn:disabled{opacity:0.45;cursor:default;}
+.attachment-preview{
+  display:none;align-items:center;gap:10px;padding:9px 12px;margin-bottom:8px;
+  background:var(--bg-elevated);border:1px solid var(--line);border-radius:8px;
+}
+.attachment-preview.visible{display:flex;}
+.attachment-preview-thumb,.attachment-preview-icon{
+  width:48px;height:48px;border-radius:6px;flex-shrink:0;
+}
+.attachment-preview-thumb{object-fit:cover;background:var(--ink-3);}
+.attachment-preview-icon{
+  background:var(--ink-3);color:var(--brass);
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+}
+.attachment-preview-info{min-width:0;flex:1;}
+.attachment-preview-name{
+  color:var(--paper);font-size:13px;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.attachment-preview-size{color:var(--paper-2);font-size:11px;margin-top:3px;}
+.attachment-preview-remove{
+  border:none;background:none;color:var(--paper-2);cursor:pointer;font-size:17px;padding:5px;
+}
+.attachment-preview-remove:hover{color:var(--rust);}
+@media(max-width:760px){
+  .attach-btn{width:36px;height:36px;font-size:17px;}
+  .attachment-preview{margin-bottom:7px;padding:8px 10px;}
+}
+
   .empty-state{
     flex:1;
     display:flex;
@@ -1833,6 +1870,16 @@ onAuthStateChanged(auth, async (user) => {
       myProfile = snap.data();
       profileCache.set(user.uid, myProfile);
 
+      // Account theme wins on other browsers. If the account has no theme yet,
+      // keep the theme already customized on this browser and sync it upward.
+      if(myProfile.theme && myProfile.theme.colors){
+        applyAccountTheme(myProfile.theme);
+      } else {
+        const localMode = getCurrentThemeName();
+        saveThemeToLocalStorage(localMode);
+        await saveThemeToAccount(localMode);
+      }
+
       if(!myProfile.username){
         authScreen.style.display = 'none';
         appEl.classList.remove('visible');
@@ -1998,17 +2045,87 @@ const THEME_PRESETS = {
 function themePresetHtml(name){ const t=THEME_PRESETS[name]; return `<button type="button" class="theme-preset ${getCurrentThemeName()===name?'active':''}" data-theme="${name}"><div class="theme-preview"><span class="theme-swatch" style="background:${t.ink}"></span><span class="theme-swatch" style="background:${t['bg-main']}"></span><span class="theme-swatch" style="background:${t.brass}"></span></div><div class="theme-preset-name">${name==='dark'?'Dark':'Light'}</div><div class="theme-preset-desc">WIRE blue · #04BFFF</div></button>`; }
 function colorToHex(value){ if(!value) return null; if(/^#[0-9a-f]{6}$/i.test(value)) return value; const m=value.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i); return m ? '#'+[m[1],m[2],m[3]].map(n=>Number(n).toString(16).padStart(2,'0')).join('') : null; }
 function themeColorInputsHtml(){ return THEME_KEYS.map(key=>{ const value=getComputedStyle(document.documentElement).getPropertyValue('--'+key).trim(); const hex=colorToHex(value)||'#04BFFF'; return `<label class="color-row"><span>${THEME_LABELS[key]}<small>--${key}</small></span><input class="theme-color-input" type="color" value="${hex}" data-var="--${key}" aria-label="${THEME_LABELS[key]}"></label>`; }).join(''); }
-function applyTheme(name){
-  let theme;
-  if(name==='custom'){ try{ theme=JSON.parse(localStorage.getItem('wireCustomTheme')||'null'); }catch(e){ theme=null; } if(!theme) theme=THEME_PRESETS.dark; localStorage.setItem('wireTheme','custom'); }
-  else if(name==='custom-reset'){ theme=THEME_PRESETS.dark; localStorage.removeItem('wireCustomTheme'); localStorage.setItem('wireTheme','dark'); }
-  else { theme=THEME_PRESETS[name]||THEME_PRESETS.dark; localStorage.setItem('wireTheme',name); }
-  THEME_KEYS.forEach(key=>document.documentElement.style.setProperty('--'+key,theme[key]));
+function getThemeColors(){
+  const theme = {};
+  THEME_KEYS.forEach(key => {
+    theme[key] = getComputedStyle(document.documentElement).getPropertyValue('--' + key).trim();
+  });
+  return theme;
+}
+
+function applyThemeColors(theme){
+  if(!theme) return;
+  THEME_KEYS.forEach(key => {
+    if(theme[key]) document.documentElement.style.setProperty('--' + key, theme[key]);
+  });
   if(typeof renderOwnAvatar==='function' && myProfile) renderOwnAvatar();
 }
+
+function applyTheme(name){
+  let theme;
+  if(name==='custom'){
+    try{ theme=JSON.parse(localStorage.getItem('wireCustomTheme')||'null'); }catch(e){ theme=null; }
+    if(!theme) theme=THEME_PRESETS.dark;
+    localStorage.setItem('wireTheme','custom');
+  } else if(name==='custom-reset'){
+    theme=THEME_PRESETS.dark;
+    localStorage.removeItem('wireCustomTheme');
+    localStorage.setItem('wireTheme','dark');
+  } else {
+    theme=THEME_PRESETS[name]||THEME_PRESETS.dark;
+    localStorage.setItem('wireTheme',name);
+  }
+  applyThemeColors(theme);
+}
+
+function applyAccountTheme(accountTheme){
+  if(!accountTheme || !accountTheme.colors) return false;
+  const mode = accountTheme.mode === 'light' || accountTheme.mode === 'dark' || accountTheme.mode === 'custom'
+    ? accountTheme.mode
+    : 'custom';
+  applyThemeColors(accountTheme.colors);
+  localStorage.setItem('wireTheme', mode);
+  localStorage.setItem('wireCustomTheme', JSON.stringify(accountTheme.colors));
+  return true;
+}
+
 function getCurrentThemeName(){ return localStorage.getItem('wireTheme')||'dark'; }
-function saveThemeToLocalStorage(mode){ const theme={}; THEME_KEYS.forEach(key=>theme[key]=getComputedStyle(document.documentElement).getPropertyValue('--'+key).trim()); localStorage.setItem('wireCustomTheme',JSON.stringify(theme)); localStorage.setItem('wireTheme',mode==='custom'?'custom':mode); }
-(function loadWireTheme(){ const saved=localStorage.getItem('wireTheme'); applyTheme(saved==='light'||saved==='dark'||saved==='custom'?saved:'dark'); })();
+
+async function saveThemeToAccount(mode){
+  const colors = getThemeColors();
+  localStorage.setItem('wireCustomTheme', JSON.stringify(colors));
+  localStorage.setItem('wireTheme', mode==='light'||mode==='dark' ? mode : 'custom');
+
+  if(!currentUser) return;
+  try{
+    await updateDoc(doc(db, 'users', currentUser.uid), {
+      theme: {
+        mode: mode==='light'||mode==='dark' ? mode : 'custom',
+        colors: colors,
+        updatedAt: Date.now()
+      }
+    });
+    myProfile.theme = {
+      mode: mode==='light'||mode==='dark' ? mode : 'custom',
+      colors: colors,
+      updatedAt: Date.now()
+    };
+  }catch(err){
+    console.error('WIRE theme save error:', err);
+    showToast('Theme saved locally', 'Could not sync the theme to your account right now.');
+  }
+}
+
+function saveThemeToLocalStorage(mode){
+  const colors = getThemeColors();
+  localStorage.setItem('wireCustomTheme',JSON.stringify(colors));
+  localStorage.setItem('wireTheme',mode==='light'||mode==='dark'?mode:'custom');
+}
+
+(function loadWireTheme(){
+  const saved=localStorage.getItem('wireTheme');
+  applyTheme(saved==='light'||saved==='dark'||saved==='custom'?saved:'dark');
+})();
 
 function renderProfileModal(){
   const uid = profileModalUid;
@@ -2108,15 +2225,36 @@ function renderProfileModal(){
       el.addEventListener('click', () => { setPresenceMode(el.getAttribute('data-mode')); renderProfileModal(); });
     });
     profileModalCard.querySelectorAll('.theme-preset').forEach(el => {
-      el.addEventListener('click', () => { applyTheme(el.getAttribute('data-theme')); renderProfileModal(); });
+      el.addEventListener('click', async () => {
+        const mode = el.getAttribute('data-theme');
+        applyTheme(mode);
+        renderProfileModal();
+        await saveThemeToAccount(mode);
+        showToast('Theme saved', 'Your theme is synced to your WIRE account.');
+      });
     });
     profileModalCard.querySelectorAll('.theme-color-input').forEach(input => {
-      input.addEventListener('input', () => { document.documentElement.style.setProperty(input.getAttribute('data-var'), input.value); saveThemeToLocalStorage('custom'); });
+      input.addEventListener('input', () => {
+        document.documentElement.style.setProperty(input.getAttribute('data-var'), input.value);
+        saveThemeToLocalStorage('custom');
+      });
+      input.addEventListener('change', async () => {
+        await saveThemeToAccount('custom');
+        showToast('Theme synced', 'Your custom colors are saved to your account.');
+      });
     });
     const resetBtn=document.getElementById('resetCustomThemeBtn');
-    if(resetBtn) resetBtn.addEventListener('click', () => { applyTheme('custom-reset'); renderProfileModal(); });
+    if(resetBtn) resetBtn.addEventListener('click', async () => {
+      applyTheme('custom-reset');
+      renderProfileModal();
+      await saveThemeToAccount('dark');
+      showToast('Theme reset', 'Your dark WIRE theme is now synced to your account.');
+    });
     const saveBtn=document.getElementById('saveCustomThemeBtn');
-    if(saveBtn) saveBtn.addEventListener('click', () => { saveThemeToLocalStorage('custom'); showToast('Theme saved','Your custom colors are saved on this device.'); });
+    if(saveBtn) saveBtn.addEventListener('click', async () => {
+      await saveThemeToAccount('custom');
+      showToast('Theme saved','Your custom colors are saved to your WIRE account.');
+    });
   }
 }
 
@@ -3200,7 +3338,10 @@ function renderChatShell(peerUid, peer){
       <div class="composer-preview" id="composerPreview"></div>
       <div class="mention-dropdown" id="mentionDropdown"></div>
       <div id="composerBannerSlot"></div>
+      <div class="attachment-preview" id="attachmentPreview"></div>
       <div class="composer-bar">
+        <button class="attach-btn" id="attachBtn" type="button" aria-label="Attach file">📎</button>
+        <input type="file" id="attachmentInput" hidden>
         <textarea id="composerInput" placeholder="Message @${escapeHtml(peer.username)}" rows="1"></textarea>
         <button class="send-btn" id="sendBtn" disabled>SEND</button>
       </div>
@@ -3216,6 +3357,8 @@ function renderChatShell(peerUid, peer){
 }
 
 let composerMode = null; // null | {type:'reply', msg, senderName} | {type:'edit', msg}
+let pendingAttachment = null;
+let attachmentUploading = false;
 
 function updateComposerPreview(text){
   const preview = document.getElementById('composerPreview');
@@ -3490,7 +3633,10 @@ function renderGroupChatShell(groupId, group){
       <div class="composer-preview" id="composerPreview"></div>
       <div class="mention-dropdown" id="mentionDropdown"></div>
       <div id="composerBannerSlot"></div>
+      <div class="attachment-preview" id="attachmentPreview"></div>
       <div class="composer-bar">
+        <button class="attach-btn" id="attachBtn" type="button" aria-label="Attach file">📎</button>
+        <input type="file" id="attachmentInput" hidden>
         <textarea id="composerInput" placeholder="Message #${escapeHtml(group.name || 'group')}" rows="1"></textarea>
         <button class="send-btn" id="sendBtn" disabled>SEND</button>
       </div>
@@ -3512,7 +3658,8 @@ function renderMessages(opts){
   const prevScrollHeight = wrap.scrollHeight;
   const prevScrollTop = wrap.scrollTop;
 
-  const msgs = olderMessages.concat(recentMessages);
+  // Deleted messages stay in Firestore, but the UI treats them as invisible.
+  const msgs = olderMessages.concat(recentMessages).filter(m => !m.deleted);
   const GROUP_GAP_MS = 5 * 60 * 1000;
 
   wrap.innerHTML = '';
@@ -3699,7 +3846,9 @@ function copyMessageText(text){
 async function softDeleteMessage(msgId){
   if(!msgId || !activeChatId) return;
   try{
-    await updateDoc(doc(messagesCollRef(activeChatKind, activeChatId), msgId), { deleted: true, text: '' });
+    // Keep the Firestore document and its original content. Only mark it hidden;
+    // renderMessages() filters deleted messages out of the UI.
+    await updateDoc(doc(messagesCollRef(activeChatKind, activeChatId), msgId), { deleted: true });
   } catch(err){
     showToast('Could not delete', 'Please try again.');
   }
