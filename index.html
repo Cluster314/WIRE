@@ -586,6 +586,44 @@
     color: var(--paper);
   }
   .composer textarea::placeholder{ color: var(--paper-2); }
+  .attach-btn{
+    width:36px;
+    height:36px;
+    flex:0 0 36px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    background:transparent;
+    color:var(--paper-2);
+    cursor:pointer;
+    font-family:var(--font-display);
+    font-size:17px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .attach-btn:hover{ color:var(--paper); border-color:var(--brass); }
+  .attach-btn:disabled{ opacity:.45; cursor:not-allowed; }
+  .attachment-pending{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    margin:0 0 8px;
+    padding:8px 10px;
+    background:var(--bg-elevated);
+    border:1px solid var(--line);
+    border-radius:7px;
+    color:var(--paper);
+    font-size:12px;
+  }
+  .attachment-pending .ap-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .attachment-pending .ap-status{ color:var(--paper-2); font-size:11px; }
+  .attachment-pending button{ border:0; background:transparent; color:var(--paper-2); cursor:pointer; font-size:15px; }
+  .msg-attachment{ margin-top:8px; max-width:min(520px,100%); }
+  .msg-attachment-image{ display:block; max-width:100%; max-height:360px; border-radius:8px; border:1px solid var(--line); object-fit:contain; }
+  .msg-attachment-file{ display:flex; align-items:center; gap:10px; width:max-content; max-width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; color:var(--paper); text-decoration:none; background:var(--bg-elevated); }
+  .msg-attachment-file:hover{ border-color:var(--brass); }
+  .msg-attachment-icon{ font-size:20px; flex:0 0 auto; }
+  .msg-attachment-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .send-btn{
     background: var(--brass);
     color: var(--ink-3);
@@ -599,43 +637,6 @@
   }
   .send-btn:hover{ background: var(--brass-dim); }
   .send-btn:disabled{ opacity:0.4; cursor:default; }
-
-.attach-btn{
-  width:38px;height:38px;flex-shrink:0;
-  border:1px solid var(--line);background:transparent;
-  color:var(--paper-2);border-radius:6px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  font-size:18px;transition:0.15s ease;
-}
-.attach-btn:hover{border-color:var(--brass);color:var(--brass);background:rgba(4,191,255,0.06);}
-.attach-btn:disabled{opacity:0.45;cursor:default;}
-.attachment-preview{
-  display:none;align-items:center;gap:10px;padding:9px 12px;margin-bottom:8px;
-  background:var(--bg-elevated);border:1px solid var(--line);border-radius:8px;
-}
-.attachment-preview.visible{display:flex;}
-.attachment-preview-thumb,.attachment-preview-icon{
-  width:48px;height:48px;border-radius:6px;flex-shrink:0;
-}
-.attachment-preview-thumb{object-fit:cover;background:var(--ink-3);}
-.attachment-preview-icon{
-  background:var(--ink-3);color:var(--brass);
-  display:flex;align-items:center;justify-content:center;font-size:20px;
-}
-.attachment-preview-info{min-width:0;flex:1;}
-.attachment-preview-name{
-  color:var(--paper);font-size:13px;font-weight:600;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.attachment-preview-size{color:var(--paper-2);font-size:11px;margin-top:3px;}
-.attachment-preview-remove{
-  border:none;background:none;color:var(--paper-2);cursor:pointer;font-size:17px;padding:5px;
-}
-.attachment-preview-remove:hover{color:var(--rust);}
-@media(max-width:760px){
-  .attach-btn{width:36px;height:36px;font-size:17px;}
-  .attachment-preview{margin-bottom:7px;padding:8px 10px;}
-}
 
   .empty-state{
     flex:1;
@@ -1551,6 +1552,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { genUploader } from "https://esm.sh/uploadthing@7.7.4/client";
 import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
   onAuthStateChanged, signOut, sendPasswordResetEmail
@@ -1572,6 +1574,8 @@ const firebaseConfig = {
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
 const db = getFirestore(fbApp);
+
+const { uploadFiles } = genUploader({ url: "https://wire-henna.vercel.app/api/uploadthing" });
 
 // ---------- DOM refs ----------
 const authScreen = document.getElementById('authScreen');
@@ -1870,16 +1874,6 @@ onAuthStateChanged(auth, async (user) => {
       myProfile = snap.data();
       profileCache.set(user.uid, myProfile);
 
-      // Account theme wins on other browsers. If the account has no theme yet,
-      // keep the theme already customized on this browser and sync it upward.
-      if(myProfile.theme && myProfile.theme.colors){
-        applyAccountTheme(myProfile.theme);
-      } else {
-        const localMode = getCurrentThemeName();
-        saveThemeToLocalStorage(localMode);
-        await saveThemeToAccount(localMode);
-      }
-
       if(!myProfile.username){
         authScreen.style.display = 'none';
         appEl.classList.remove('visible');
@@ -2045,87 +2039,17 @@ const THEME_PRESETS = {
 function themePresetHtml(name){ const t=THEME_PRESETS[name]; return `<button type="button" class="theme-preset ${getCurrentThemeName()===name?'active':''}" data-theme="${name}"><div class="theme-preview"><span class="theme-swatch" style="background:${t.ink}"></span><span class="theme-swatch" style="background:${t['bg-main']}"></span><span class="theme-swatch" style="background:${t.brass}"></span></div><div class="theme-preset-name">${name==='dark'?'Dark':'Light'}</div><div class="theme-preset-desc">WIRE blue · #04BFFF</div></button>`; }
 function colorToHex(value){ if(!value) return null; if(/^#[0-9a-f]{6}$/i.test(value)) return value; const m=value.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i); return m ? '#'+[m[1],m[2],m[3]].map(n=>Number(n).toString(16).padStart(2,'0')).join('') : null; }
 function themeColorInputsHtml(){ return THEME_KEYS.map(key=>{ const value=getComputedStyle(document.documentElement).getPropertyValue('--'+key).trim(); const hex=colorToHex(value)||'#04BFFF'; return `<label class="color-row"><span>${THEME_LABELS[key]}<small>--${key}</small></span><input class="theme-color-input" type="color" value="${hex}" data-var="--${key}" aria-label="${THEME_LABELS[key]}"></label>`; }).join(''); }
-function getThemeColors(){
-  const theme = {};
-  THEME_KEYS.forEach(key => {
-    theme[key] = getComputedStyle(document.documentElement).getPropertyValue('--' + key).trim();
-  });
-  return theme;
-}
-
-function applyThemeColors(theme){
-  if(!theme) return;
-  THEME_KEYS.forEach(key => {
-    if(theme[key]) document.documentElement.style.setProperty('--' + key, theme[key]);
-  });
-  if(typeof renderOwnAvatar==='function' && myProfile) renderOwnAvatar();
-}
-
 function applyTheme(name){
   let theme;
-  if(name==='custom'){
-    try{ theme=JSON.parse(localStorage.getItem('wireCustomTheme')||'null'); }catch(e){ theme=null; }
-    if(!theme) theme=THEME_PRESETS.dark;
-    localStorage.setItem('wireTheme','custom');
-  } else if(name==='custom-reset'){
-    theme=THEME_PRESETS.dark;
-    localStorage.removeItem('wireCustomTheme');
-    localStorage.setItem('wireTheme','dark');
-  } else {
-    theme=THEME_PRESETS[name]||THEME_PRESETS.dark;
-    localStorage.setItem('wireTheme',name);
-  }
-  applyThemeColors(theme);
+  if(name==='custom'){ try{ theme=JSON.parse(localStorage.getItem('wireCustomTheme')||'null'); }catch(e){ theme=null; } if(!theme) theme=THEME_PRESETS.dark; localStorage.setItem('wireTheme','custom'); }
+  else if(name==='custom-reset'){ theme=THEME_PRESETS.dark; localStorage.removeItem('wireCustomTheme'); localStorage.setItem('wireTheme','dark'); }
+  else { theme=THEME_PRESETS[name]||THEME_PRESETS.dark; localStorage.setItem('wireTheme',name); }
+  THEME_KEYS.forEach(key=>document.documentElement.style.setProperty('--'+key,theme[key]));
+  if(typeof renderOwnAvatar==='function' && myProfile) renderOwnAvatar();
 }
-
-function applyAccountTheme(accountTheme){
-  if(!accountTheme || !accountTheme.colors) return false;
-  const mode = accountTheme.mode === 'light' || accountTheme.mode === 'dark' || accountTheme.mode === 'custom'
-    ? accountTheme.mode
-    : 'custom';
-  applyThemeColors(accountTheme.colors);
-  localStorage.setItem('wireTheme', mode);
-  localStorage.setItem('wireCustomTheme', JSON.stringify(accountTheme.colors));
-  return true;
-}
-
 function getCurrentThemeName(){ return localStorage.getItem('wireTheme')||'dark'; }
-
-async function saveThemeToAccount(mode){
-  const colors = getThemeColors();
-  localStorage.setItem('wireCustomTheme', JSON.stringify(colors));
-  localStorage.setItem('wireTheme', mode==='light'||mode==='dark' ? mode : 'custom');
-
-  if(!currentUser) return;
-  try{
-    await updateDoc(doc(db, 'users', currentUser.uid), {
-      theme: {
-        mode: mode==='light'||mode==='dark' ? mode : 'custom',
-        colors: colors,
-        updatedAt: Date.now()
-      }
-    });
-    myProfile.theme = {
-      mode: mode==='light'||mode==='dark' ? mode : 'custom',
-      colors: colors,
-      updatedAt: Date.now()
-    };
-  }catch(err){
-    console.error('WIRE theme save error:', err);
-    showToast('Theme saved locally', 'Could not sync the theme to your account right now.');
-  }
-}
-
-function saveThemeToLocalStorage(mode){
-  const colors = getThemeColors();
-  localStorage.setItem('wireCustomTheme',JSON.stringify(colors));
-  localStorage.setItem('wireTheme',mode==='light'||mode==='dark'?mode:'custom');
-}
-
-(function loadWireTheme(){
-  const saved=localStorage.getItem('wireTheme');
-  applyTheme(saved==='light'||saved==='dark'||saved==='custom'?saved:'dark');
-})();
+function saveThemeToLocalStorage(mode){ const theme={}; THEME_KEYS.forEach(key=>theme[key]=getComputedStyle(document.documentElement).getPropertyValue('--'+key).trim()); localStorage.setItem('wireCustomTheme',JSON.stringify(theme)); localStorage.setItem('wireTheme',mode==='custom'?'custom':mode); }
+(function loadWireTheme(){ const saved=localStorage.getItem('wireTheme'); applyTheme(saved==='light'||saved==='dark'||saved==='custom'?saved:'dark'); })();
 
 function renderProfileModal(){
   const uid = profileModalUid;
@@ -2225,36 +2149,15 @@ function renderProfileModal(){
       el.addEventListener('click', () => { setPresenceMode(el.getAttribute('data-mode')); renderProfileModal(); });
     });
     profileModalCard.querySelectorAll('.theme-preset').forEach(el => {
-      el.addEventListener('click', async () => {
-        const mode = el.getAttribute('data-theme');
-        applyTheme(mode);
-        renderProfileModal();
-        await saveThemeToAccount(mode);
-        showToast('Theme saved', 'Your theme is synced to your WIRE account.');
-      });
+      el.addEventListener('click', () => { applyTheme(el.getAttribute('data-theme')); renderProfileModal(); });
     });
     profileModalCard.querySelectorAll('.theme-color-input').forEach(input => {
-      input.addEventListener('input', () => {
-        document.documentElement.style.setProperty(input.getAttribute('data-var'), input.value);
-        saveThemeToLocalStorage('custom');
-      });
-      input.addEventListener('change', async () => {
-        await saveThemeToAccount('custom');
-        showToast('Theme synced', 'Your custom colors are saved to your account.');
-      });
+      input.addEventListener('input', () => { document.documentElement.style.setProperty(input.getAttribute('data-var'), input.value); saveThemeToLocalStorage('custom'); });
     });
     const resetBtn=document.getElementById('resetCustomThemeBtn');
-    if(resetBtn) resetBtn.addEventListener('click', async () => {
-      applyTheme('custom-reset');
-      renderProfileModal();
-      await saveThemeToAccount('dark');
-      showToast('Theme reset', 'Your dark WIRE theme is now synced to your account.');
-    });
+    if(resetBtn) resetBtn.addEventListener('click', () => { applyTheme('custom-reset'); renderProfileModal(); });
     const saveBtn=document.getElementById('saveCustomThemeBtn');
-    if(saveBtn) saveBtn.addEventListener('click', async () => {
-      await saveThemeToAccount('custom');
-      showToast('Theme saved','Your custom colors are saved to your WIRE account.');
-    });
+    if(saveBtn) saveBtn.addEventListener('click', () => { saveThemeToLocalStorage('custom'); showToast('Theme saved','Your custom colors are saved on this device.'); });
   }
 }
 
@@ -3338,9 +3241,8 @@ function renderChatShell(peerUid, peer){
       <div class="composer-preview" id="composerPreview"></div>
       <div class="mention-dropdown" id="mentionDropdown"></div>
       <div id="composerBannerSlot"></div>
-      <div class="attachment-preview" id="attachmentPreview"></div>
       <div class="composer-bar">
-        <button class="attach-btn" id="attachBtn" type="button" aria-label="Attach file">📎</button>
+        <button class="attach-btn" id="attachBtn" type="button" title="Attach a file" aria-label="Attach a file">📎</button>
         <input type="file" id="attachmentInput" hidden>
         <textarea id="composerInput" placeholder="Message @${escapeHtml(peer.username)}" rows="1"></textarea>
         <button class="send-btn" id="sendBtn" disabled>SEND</button>
@@ -3358,7 +3260,85 @@ function renderChatShell(peerUid, peer){
 
 let composerMode = null; // null | {type:'reply', msg, senderName} | {type:'edit', msg}
 let pendingAttachment = null;
-let attachmentUploading = false;
+let uploadingAttachment = false;
+
+function formatBytes(bytes){
+  if(!Number.isFinite(bytes)) return '';
+  if(bytes < 1024) return bytes + ' B';
+  if(bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function renderPendingAttachment(){
+  const bar = document.querySelector('.composer-bar');
+  if(!bar) return;
+  const old = document.getElementById('pendingAttachment');
+  if(old) old.remove();
+  if(!pendingAttachment && !uploadingAttachment) return;
+  const div = document.createElement('div');
+  div.id = 'pendingAttachment';
+  div.className = 'attachment-pending';
+  if(uploadingAttachment){
+    div.innerHTML = '<span>↑</span><span class="ap-name">Uploading attachment…</span><span class="ap-status" id="attachmentProgress">0%</span>';
+  } else {
+    div.innerHTML = `<span>📎</span><span class="ap-name">${escapeHtml(pendingAttachment.name)} · ${formatBytes(pendingAttachment.size)}</span><span class="ap-status">Ready</span><button type="button" id="removeAttachmentBtn" aria-label="Remove attachment">✕</button>`;
+  }
+  bar.parentElement.insertBefore(div, bar);
+  const remove = document.getElementById('removeAttachmentBtn');
+  if(remove) remove.addEventListener('click', () => { pendingAttachment = null; renderPendingAttachment(); updateSendState(); });
+}
+
+function updateSendState(){
+  const input = document.getElementById('composerInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const attachBtn = document.getElementById('attachBtn');
+  const attachmentInput = document.getElementById('attachmentInput');
+  if(!input || !sendBtn) return;
+  sendBtn.disabled = uploadingAttachment || (!input.value.trim() && !pendingAttachment);
+}
+
+async function uploadComposerFile(file){
+  if(!file) return;
+  if(file.size > 20 * 1024 * 1024){
+    showToast('File too large', 'Attachments are limited to 20 MB.');
+    return;
+  }
+  if(composerMode && composerMode.type === 'edit'){
+    showToast('Attachment unavailable', 'Attachments cannot be added while editing a message.');
+    return;
+  }
+  uploadingAttachment = true;
+  pendingAttachment = null;
+  renderPendingAttachment();
+  updateSendState();
+  try{
+    const result = await uploadFiles('messageAttachment', {
+      files: [file],
+      onUploadProgress: ({ progress }) => {
+        const el = document.getElementById('attachmentProgress');
+        if(el) el.textContent = Math.round(progress) + '%';
+      }
+    });
+    const uploaded = result && result[0];
+    if(!uploaded || !uploaded.url) throw new Error('UploadThing did not return a file URL.');
+    pendingAttachment = {
+      url: uploaded.url,
+      key: uploaded.key || null,
+      name: uploaded.name || file.name,
+      size: uploaded.size || file.size,
+      type: uploaded.type || file.type || 'application/octet-stream'
+    };
+    showToast('Attachment ready', pendingAttachment.name);
+  } catch(err){
+    console.error(err);
+    showToast('Upload failed', err?.message || 'Could not upload the attachment.');
+  } finally{
+    uploadingAttachment = false;
+    renderPendingAttachment();
+    updateSendState();
+  }
+}
+
 
 function updateComposerPreview(text){
   const preview = document.getElementById('composerPreview');
@@ -3396,6 +3376,9 @@ function clearComposerMode(){
   composerMode = null;
   renderComposerBanner();
   if(wasEdit){
+    pendingAttachment = null;
+    uploadingAttachment = false;
+    renderPendingAttachment();
     const input = document.getElementById('composerInput');
     const sendBtn = document.getElementById('sendBtn');
     if(input){ input.value = ''; input.style.height = 'auto'; }
@@ -3537,9 +3520,22 @@ function wireComposer(){
   composerMode = null;
   renderComposerBanner();
   closeMentionDropdown();
+  pendingAttachment = null;
+  uploadingAttachment = false;
+  renderPendingAttachment();
+  updateSendState();
+
+  if(attachBtn && attachmentInput){
+    attachBtn.addEventListener('click', () => attachmentInput.click());
+    attachmentInput.addEventListener('change', async () => {
+      const file = attachmentInput.files[0];
+      attachmentInput.value = '';
+      await uploadComposerFile(file);
+    });
+  }
 
   input.addEventListener('input', () => {
-    sendBtn.disabled = input.value.trim().length === 0;
+    updateSendState();
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 120) + 'px';
     updateComposerPreview(input.value);
@@ -3565,7 +3561,7 @@ function wireComposer(){
 
   async function trySend(){
     const text = input.value.trim();
-    if(!text || !activeChatId) return;
+    if((!text && !pendingAttachment) || !activeChatId || uploadingAttachment) return;
 
     if(composerMode && composerMode.type === 'edit'){
       const msgId = composerMode.msg.id;
@@ -3584,6 +3580,9 @@ function wireComposer(){
       text: text,
       t: Date.now()
     };
+    if(pendingAttachment){
+      payload.attachment = { ...pendingAttachment };
+    }
     if(composerMode && composerMode.type === 'reply'){
       payload.replyTo = {
         id: composerMode.msg.id || '',
@@ -3595,8 +3594,11 @@ function wireComposer(){
     input.value = '';
     input.style.height = 'auto';
     sendBtn.disabled = true;
+    pendingAttachment = null;
+    renderPendingAttachment();
     updateComposerPreview('');
     closeMentionDropdown();
+    updateSendState();
     try{
       await addDoc(messagesCollRef(activeChatKind, activeChatId), payload);
     } catch(err){
@@ -3633,9 +3635,8 @@ function renderGroupChatShell(groupId, group){
       <div class="composer-preview" id="composerPreview"></div>
       <div class="mention-dropdown" id="mentionDropdown"></div>
       <div id="composerBannerSlot"></div>
-      <div class="attachment-preview" id="attachmentPreview"></div>
       <div class="composer-bar">
-        <button class="attach-btn" id="attachBtn" type="button" aria-label="Attach file">📎</button>
+        <button class="attach-btn" id="attachBtn" type="button" title="Attach a file" aria-label="Attach a file">📎</button>
         <input type="file" id="attachmentInput" hidden>
         <textarea id="composerInput" placeholder="Message #${escapeHtml(group.name || 'group')}" rows="1"></textarea>
         <button class="send-btn" id="sendBtn" disabled>SEND</button>
@@ -3658,8 +3659,7 @@ function renderMessages(opts){
   const prevScrollHeight = wrap.scrollHeight;
   const prevScrollTop = wrap.scrollTop;
 
-  // Deleted messages stay in Firestore, but the UI treats them as invisible.
-  const msgs = olderMessages.concat(recentMessages).filter(m => !m.deleted);
+  const msgs = olderMessages.concat(recentMessages);
   const GROUP_GAP_MS = 5 * 60 * 1000;
 
   wrap.innerHTML = '';
@@ -3767,7 +3767,23 @@ function messageBodyHtml(m){
       <span>${escapeHtml((m.replyTo.text || '').slice(0, 80))}</span>
     </div>`;
   }
-  html += `<div class="msg-text">${formatMessageText(m.text)}${m.edited ? '<span class="msg-edited-tag">(edited)</span>' : ''}</div>`;
+  if(m.text){
+    html += `<div class="msg-text">${formatMessageText(m.text)}${m.edited ? '<span class="msg-edited-tag">(edited)</span>' : ''}</div>`;
+  }
+  if(m.attachment && m.attachment.url){
+    const url = String(m.attachment.url);
+    const safeUrl = /^https:\/\//i.test(url) ? escapeHtml(url) : '';
+    if(safeUrl){
+      const type = String(m.attachment.type || '');
+      const name = escapeHtml(m.attachment.name || 'Attachment');
+      if(type.startsWith('image/')){
+        html += `<div class="msg-attachment"><a href="${safeUrl}" target="_blank" rel="noopener noreferrer"><img class="msg-attachment-image" src="${safeUrl}" alt="${name}" loading="lazy"></a></div>`;
+      } else {
+        html += `<div class="msg-attachment"><a class="msg-attachment-file" href="${safeUrl}" target="_blank" rel="noopener noreferrer"><span class="msg-attachment-icon">📎</span><span class="msg-attachment-name">${name}</span></a></div>`;
+      }
+    }
+  }
+  
   return html;
 }
 
@@ -3846,9 +3862,7 @@ function copyMessageText(text){
 async function softDeleteMessage(msgId){
   if(!msgId || !activeChatId) return;
   try{
-    // Keep the Firestore document and its original content. Only mark it hidden;
-    // renderMessages() filters deleted messages out of the UI.
-    await updateDoc(doc(messagesCollRef(activeChatKind, activeChatId), msgId), { deleted: true });
+    await updateDoc(doc(messagesCollRef(activeChatKind, activeChatId), msgId), { deleted: true, text: '' });
   } catch(err){
     showToast('Could not delete', 'Please try again.');
   }
